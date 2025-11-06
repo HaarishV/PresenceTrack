@@ -51,7 +51,7 @@ python mark_attendance.py
 
 
 
-### Step 4: View Attendance
+ Step 4: View Attendance
 ```
 python view.attendance.py
 ```
