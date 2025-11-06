@@ -1,0 +1,8 @@
+opencv-python
+numpy
+torch
+torchaudio
+torchvision
+ultralytics
+face-recognition
+firebase-admin
