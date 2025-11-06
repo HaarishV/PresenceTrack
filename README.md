@@ -17,44 +17,43 @@ PresenceTrack is a real-time attendance system that leverages computer vision an
 - Easy addition of new students with face data capture
 
 ## Installation
-<h3>1.Create a virtual environment and activate it:</h3>
+1.Create a virtual environment and activate it:
 
 ```
 conda create -n track python=3.10
 conda activate track
 ```
-<h3>Install dependencies:</h3>
+2.Install dependencies:
 
 ```
 pip install -r requirements.txt
 ```
-<h3>Add your Firebase service account key:</h3>
-Place serviceAccountKey.json in the project root. (Do not push it to GitHub)
+3.Add your Firebase service account key:
+- Place serviceAccountKey.json in the project root. (Do not push it to GitHub)
 
 ## Usage
-### Step 1: Add Students
-Run the script to capture faces and save student data:
+Step 1: Add Students Details and Capture Faces
+
 ```
 python add_students.py
 ```
-### Step 2: Encode Faces
+ Step 2: Encode Faces (generate face_encodings.pkl used for recognition.)
 ```
 python encode.py
 ```
-This will generate face_encodings.pkl used for recognition.
 
-### Step 3: Mark Attendance
+
+ Step 3: Mark Attendance
 ```
 python mark_attendance.py
 ```
-- Real-time detection and marking will start.
+ Press q to quit.
 
-- Press q to quit.
 
-- Attendance is stored in Firebase Firestore by date.
 
 ### Step 4: View Attendance
 ```
 python view.attendance.py
 ```
+Enter the date in (YYYY-MM-DD) format
 
