@@ -1,3 +1,7 @@
+# ------------------- Ignore Warnings -------------------
+import warnings
+warnings.filterwarnings("ignore")
+
 import cv2
 import face_recognition
 import pickle
@@ -7,29 +11,34 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 import torch
 import numpy as np
+import os
+import pandas as pd
 
-# Initialize Firebase
+
+# ------------------- Firebase Setup -------------------
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# Load known face encodings
+# ------------------- Load Known Faces -------------------
 with open("face_encodings.pkl", "rb") as f:
     data = pickle.load(f)
+
 known_encodings = data["encodings"]
 known_names = data["names"]
 
-# Check for GPU
+# ------------------- GPU Check -------------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
-# Load YOLOv8 face detection model (replace with your correct path if downloaded manually)
-model = YOLO("yolov8n-face.pt")  # ultralytics will download automatically
-model.fuse()
+# ------------------- YOLOv8 Face Detection -------------------
+model = YOLO("yolov8n-face.pt")  
+#model.fuse()
 model.to(device)
 
-cam = cv2.VideoCapture(0)
+# ------------------- Attendance Tracking -------------------
 marked_students = set()
+attendance_records = []
 
 def mark_attendance(name):
     now = datetime.now()
@@ -46,12 +55,48 @@ def mark_attendance(name):
             marked_students.add(name)
             return
 
+    # Mark in Firebase
     attendance_ref.set({
         reg_no: {"name": actual_name, "time": time, "status": "Present"}
     }, merge=True)
     print(f"✅ {actual_name} ({reg_no}) marked present at {time}")
     marked_students.add(name)
 
+    # Keep in memory for Excel export
+    attendance_records.append({
+        "Date": date,
+        "Time": time,
+        "Register No": reg_no,
+        "Name": actual_name,
+        "Status": "Present"
+    })
+
+def export_attendance_to_excel():
+    if not attendance_records:
+        print("No attendance to export.")
+        return
+    
+    # Ensure Attendance folder exists
+    os.makedirs("Attendance", exist_ok=True)
+    
+    # File name based on current date
+    date_str = datetime.now().strftime('%Y-%m-%d')
+    file_name = f"Attendance/Attendance_{date_str}.xlsx"
+    
+    # If file exists, append new records; otherwise create new
+    if os.path.exists(file_name):
+        df_existing = pd.read_excel(file_name)
+        df_new = pd.DataFrame(attendance_records)
+        df_combined = pd.concat([df_existing, df_new]).drop_duplicates(subset=["Register No"])
+        df_combined.to_excel(file_name, index=False)
+    else:
+        df = pd.DataFrame(attendance_records)
+        df.to_excel(file_name, index=False)
+    
+    print(f"✅ Attendance exported to {file_name}")
+
+# ------------------- Start Camera -------------------
+cam = cv2.VideoCapture(0)
 print("📡 Starting real-time attendance... Press 'q' to quit.")
 
 while True:
@@ -62,12 +107,12 @@ while True:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # YOLO detection
-    results = model.predict(rgb_frame, device=device, verbose=False)[0]
-    boxes = results.boxes.xyxy.cpu().numpy()  # get boxes as (x1, y1, x2, y2)
+    results = model(rgb_frame, verbose=False)[0]
+    boxes = results.boxes.xyxy.cpu().numpy()  # (x1, y1, x2, y2)
 
     for box in boxes:
         x1, y1, x2, y2 = map(int, box)
-        
+
         # Skip very small boxes
         if (x2 - x1) < 20 or (y2 - y1) < 20:
             continue
@@ -93,9 +138,12 @@ while True:
         cv2.putText(frame, name, (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
-    cv2.imshow("Attendance System", frame)
+    cv2.imshow("PresenceTrack", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cam.release()
 cv2.destroyAllWindows()
+
+# ------------------- Export to Excel -------------------
+export_attendance_to_excel()
