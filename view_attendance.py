@@ -1,3 +1,8 @@
+# ------------------- Ignore Warnings -------------------
+import warnings
+warnings.filterwarnings("ignore")
+
+
 import firebase_admin
 from firebase_admin import credentials, firestore
 

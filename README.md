@@ -57,3 +57,5 @@ python view.attendance.py
 ```
 Enter the date in (YYYY-MM-DD) format
 
+# Output
+![alt text](image.png)

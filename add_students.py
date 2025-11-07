@@ -1,3 +1,8 @@
+# ------------------- Ignore Warnings -------------------
+import warnings
+warnings.filterwarnings("ignore")
+
+
 import cv2
 import os
 import firebase_admin

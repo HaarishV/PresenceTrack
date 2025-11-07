@@ -1,3 +1,8 @@
+# ------------------- Ignore Warnings -------------------
+import warnings
+warnings.filterwarnings("ignore")
+
+
 import os
 import face_recognition
 import numpy as np
